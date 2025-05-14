@@ -64,7 +64,20 @@ cd ./eden
 COUNT="$(git rev-list --count HEAD)"
 HASH="$(git rev-parse --short HEAD)"
 DATE="$(date +"%Y%m%d")"
-git submodule update --init --recursive -j$(nproc)
+
+COUNT=0
+while [ "$COUNT" -le 5 ]; do
+	if ! git submodule update --init --recursive -j$(nproc); then
+		COUNT=$((COUNT + 1))
+		>&2 echo "Failed, trying $COUNT time"
+	else
+		break
+	fi
+done
+if [ "$COUNT" -gt 5 ]; then
+	>&2 echo "Failed update submodules 5 times"
+	exit 1
+fi
 
 # workaround for aarch64
 if [ "$1" = 'aarch64' ]; then
