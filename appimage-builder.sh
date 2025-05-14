@@ -18,6 +18,7 @@ BIN_FOLDER="${BUILD_DIR}/bin"
 BIN_EXE="${BIN_FOLDER}/${BUILD_APP}"
 CPU_ARCH=$(uname -m)
 BIN_EXE_MIME_TYPE=$(file -b --mime-type "${BIN_EXE}")
+LIB4BN="https://raw.githubusercontent.com/VHSgunzo/sharun/refs/heads/main/lib4bin"
 if [[ "${BIN_EXE_MIME_TYPE}" != "application/x-pie-executable" && "${BIN_EXE_MIME_TYPE}" != "application/x-executable" ]]; then
     >&2 echo "Invalid or missing main executable (${BIN_EXE})!"
     exit 1
@@ -32,33 +33,28 @@ cd "${BUILD_DIR}"
 DESTDIR="${DEPLOY_LINUX_APPDIR_FOLDER}" ninja install
 
 cd "${DEPLOY_LINUX_FOLDER}"
+mv -v ./usr/share ./share
+mv -v ./usr ./shared
 
-# remove -cmd executable, not needed for AppImage
-rm -fv "${DEPLOY_LINUX_APPDIR_FOLDER}"/usr/bin/"${BUILD_APP}"-cli
+wget "$LIB4BIN" -O ./lib4bin
+chmod +x ./lib4bin
 
-curl -fsSLo ./linuxdeploy "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-${CPU_ARCH}.AppImage"
-chmod +x ./linuxdeploy
-
-curl -fsSLo ./linuxdeploy-plugin-qt "https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-${CPU_ARCH}.AppImage"
-chmod +x ./linuxdeploy-plugin-qt
-
-curl -fsSLo ./linuxdeploy-plugin-checkrt.sh https://github.com/darealshinji/linuxdeploy-plugin-checkrt/releases/download/continuous/linuxdeploy-plugin-checkrt.sh
-chmod +x ./linuxdeploy-plugin-checkrt.sh
-
-# Add Qt 6 specific environment variables
-export QT_QPA_PLATFORM="wayland;xcb"
-export EXTRA_PLATFORM_PLUGINS="libqwayland-egl.so;libqwayland-generic.so;libqxcb.so"
-export EXTRA_QT_PLUGINS="svg;wayland-decoration-client;wayland-graphics-integration-client;wayland-shell-integration;waylandcompositor;xcb-gl-integration;platformthemes/libqt6ct.so"
-
-# Update linuxdeploy commands for Qt 6
-export QMAKE="/usr/bin/qmake6"
-export QT_SELECT=6
-
-# remove NO_STRIP=1 if linuxdeploy is updated, see: https://github.com/linuxdeploy/linuxdeploy/issues/272
-NO_STRIP=1 APPIMAGE_EXTRACT_AND_RUN=1 ./linuxdeploy --appdir ./AppDir --plugin qt --plugin checkrt
-
-# remove libwayland-client because it has platform-dependent exports and breaks other OSes
-rm -fv ./AppDir/usr/lib/libwayland-client.so*
-
-# remove libvulkan because it causes issues with gamescope
-rm -fv ./AppDir/usr/lib/libvulkan.so*
+./lib4bin -p -v -s -k \
+    ./shared/bin/* \
+	/usr/lib/libXss.so* \
+	/usr/lib/libdecor-0.so* \
+	/usr/lib/libgamemode.so* \
+	/usr/lib/qt6/plugins/audio/* \
+	/usr/lib/qt6/plugins/bearer/* \
+	/usr/lib/qt6/plugins/imageformats/* \
+	/usr/lib/qt6/plugins/iconengines/* \
+	/usr/lib/qt6/plugins/platforms/* \
+	/usr/lib/qt6/plugins/platformthemes/* \
+	/usr/lib/qt6/plugins/platforminputcontexts/* \
+	/usr/lib/qt6/plugins/styles/* \
+	/usr/lib/qt6/plugins/xcbglintegrations/* \
+	/usr/lib/qt6/plugins/wayland-*/* \
+	/usr/lib/pulseaudio/* \
+	/usr/lib/pipewire-0.3/* \
+	/usr/lib/spa-0.2/*/* \
+	/usr/lib/alsa-lib/*
