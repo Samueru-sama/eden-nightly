@@ -41,6 +41,7 @@ chmod +x ./lib4bin
 
 ./lib4bin -p -v -s -k \
     ./shared/bin/* \
+	/usr/lib/libSDL* \
 	/usr/lib/libXss.so* \
 	/usr/lib/libdecor-0.so* \
 	/usr/lib/libgamemode.so* \
